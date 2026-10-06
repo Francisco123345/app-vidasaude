@@ -1,0 +1,1856 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VidaSaúde Pro - Portal de Saúde & Bem-Estar</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+            },
+            health: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Google Fonts (Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.4);
+      border-radius: 9999px;
+    }
+    .pulse-emergency {
+      animation: pulse-red 2s infinite;
+    }
+    @keyframes pulse-red {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    @media print {
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      body { background: white !important; color: black !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white" id="appBody">
+
+  <header class="no-print sticky top-0 z-40 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-sm transition-colors">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('dashboard')">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-health-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+          <i class="fa-solid fa-heart-pulse text-xl"></i>
+        </div>
+        <div>
+          <span class="text-xl font-extrabold bg-gradient-to-r from-brand-600 to-health-600 bg-clip-text text-transparent">VidaSaúde</span>
+          <span class="text-xs font-bold text-slate-500 dark:text-slate-400 block -mt-1 tracking-wider uppercase">Pro</span>
+        </div>
+      </div>
+
+      <!-- Real-time Clock & Date -->
+      <div class="hidden md:flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-700/50 px-4 py-1.5 rounded-xl border border-slate-200/60 dark:border-slate-600/50">
+        <span id="liveClock" class="text-sm font-bold tracking-tight text-slate-700 dark:text-slate-200">--:--:--</span>
+        <span id="liveDate" class="text-[11px] text-slate-500 dark:text-slate-400">--/--/----</span>
+      </div>
+
+      <!-- Header Quick Actions & Accessibility -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        
+        <!-- Emergency Badge Button -->
+        <button onclick="openEmergencyModal()" class="pulse-emergency bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs sm:text-sm px-3 py-2 rounded-xl flex items-center space-x-1.5 transition shadow-sm">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span class="hidden sm:inline">Ficha</span> Emergência
+        </button>
+
+        <!-- Font Size Accessibility -->
+        <div class="flex items-center bg-slate-100 dark:bg-slate-700 rounded-xl p-1 border border-slate-200 dark:border-slate-600">
+          <button onclick="adjustFontSize(-1)" title="Diminuir Fonte" class="w-7 h-7 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-600 rounded-lg text-xs font-bold transition">A-</button>
+          <button onclick="adjustFontSize(1)" title="Aumentar Fonte" class="w-7 h-7 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-600 rounded-lg text-xs font-bold transition">A+</button>
+        </div>
+
+        <!-- Theme Toggle -->
+        <button id="themeToggleBtn" onclick="toggleTheme()" title="Alternar Tema" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-amber-400 hover:bg-slate-200 dark:hover:bg-slate-600 transition border border-slate-200 dark:border-slate-600">
+          <i class="fa-solid fa-moon text-sm dark:hidden"></i>
+          <i class="fa-solid fa-sun text-sm hidden dark:block"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col md:flex-row gap-6 w-full">
+
+    <!-- Sidebar Navigation for Desktop & Mobile Sticky Bar -->
+    <aside class="no-print md:w-64 flex-shrink-0">
+      <nav class="bg-white dark:bg-slate-800 rounded-2xl p-3 border border-slate-200 dark:border-slate-700 shadow-sm sticky top-20">
+        <p class="px-3 py-2 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Navegação Principal</p>
+        <div class="space-y-1" id="navigationContainer">
+          
+          <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition text-brand-600 bg-brand-50 dark:bg-brand-900/30 dark:text-brand-400">
+            <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+            <span>Painel Inicial</span>
+          </button>
+
+          <button onclick="switchTab('emergency')" id="nav-emergency" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+            <i class="fa-solid fa-kit-medical w-5 text-center text-rose-500"></i>
+            <span>Emergência & Socorro</span>
+          </button>
+
+          <button onclick="switchTab('hospitals')" id="nav-hospitals" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+            <i class="fa-solid fa-hospital-user w-5 text-center text-blue-500"></i>
+            <span>Unidades de Saúde</span>
+          </button>
+
+          <button onclick="switchTab('triage')" id="nav-triage" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+            <i class="fa-solid fa-stethoscope w-5 text-center text-emerald-500"></i>
+            <span>Triagem de Sintomas</span>
+          </button>
+
+          <button onclick="switchTab('medications')" id="nav-medications" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+            <i class="fa-solid fa-pills w-5 text-center text-purple-500"></i>
+            <span>Medicamentos</span>
+          </button>
+
+          <button onclick="switchTab('vitals')" id="nav-vitals" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+            <i class="fa-solid fa-heart-pulse w-5 text-center text-red-500"></i>
+            <span>Diário de Saúde</span>
+          </button>
+
+          <button onclick="switchTab('calculators')" id="nav-calculators" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+            <i class="fa-solid fa-calculator w-5 text-center text-amber-500"></i>
+            <span>Calculadoras & Água</span>
+          </button>
+
+          <button onclick="switchTab('ai-assistant')" id="nav-ai-assistant" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+            <i class="fa-solid fa-robot w-5 text-center text-teal-500"></i>
+            <span>Assistente IA Gemini</span>
+          </button>
+
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700 px-3">
+          <div class="bg-brand-50 dark:bg-brand-900/20 p-3 rounded-xl text-xs text-brand-800 dark:text-brand-300">
+            <p class="font-bold mb-1"><i class="fa-solid fa-shield-halved mr-1"></i> Seus Dados Protegidos</p>
+            <p class="text-[11px] leading-relaxed opacity-90">Suas informações de saúde são armazenadas com privacidade local no seu próprio navegador.</p>
+          </div>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main View Content Area -->
+    <main class="flex-1 min-w-0">
+
+      <section id="tab-dashboard" class="tab-content space-y-6">
+        
+        <!-- Welcome Banner -->
+        <div class="bg-gradient-to-r from-brand-600 via-brand-700 to-health-600 rounded-3xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
+          <div class="absolute -right-10 -bottom-10 opacity-10 pointer-events-none">
+            <i class="fa-solid fa-notes-medical text-[220px]"></i>
+          </div>
+          <div class="relative z-10 max-w-2xl">
+            <span class="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider mb-3 inline-block backdrop-blur-sm">Seu Hub de Saúde Integrado</span>
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Bem-vindo ao VidaSaúde Pro</h1>
+            <p class="mt-2 text-brand-100 text-sm sm:text-base leading-relaxed">Monitore seus sinais vitais, consulte orientações médicas de urgência, gerencie remedios e tire dúvidas com o assistente inteligente.</p>
+            
+            <div class="mt-6 flex flex-wrap gap-3">
+              <button onclick="switchTab('triage')" class="bg-white text-brand-700 hover:bg-brand-50 font-bold px-4 py-2.5 rounded-xl text-sm transition shadow-sm flex items-center space-x-2">
+                <i class="fa-solid fa-stethoscope text-emerald-600"></i>
+                <span>Iniciar Triagem de Sintomas</span>
+              </button>
+              <button onclick="openEmergencyModal()" class="bg-rose-500/90 hover:bg-rose-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition shadow-sm flex items-center space-x-2 backdrop-blur-sm">
+                <i class="fa-solid fa-id-card"></i>
+                <span>Ficha de Emergência</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Summary Metrics -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          
+          <!-- Water Metric -->
+          <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Água Hoje</p>
+              <h3 id="dashWaterText" class="text-2xl font-black text-slate-800 dark:text-slate-100 mt-1">0 / 2000 ml</h3>
+              <p class="text-xs text-sky-600 dark:text-sky-400 font-medium mt-1"><i class="fa-solid fa-droplet mr-1"></i> <span id="dashWaterPercent">0%</span> da meta</p>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-sky-50 dark:bg-sky-900/30 text-sky-500 flex items-center justify-center text-xl">
+              <i class="fa-solid fa-bottle-water"></i>
+            </div>
+          </div>
+
+          <!-- Pending Meds Metric -->
+          <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Remédios Hoje</p>
+              <h3 id="dashMedsText" class="text-2xl font-black text-slate-800 dark:text-slate-100 mt-1">0 Pendente(s)</h3>
+              <p class="text-xs text-purple-600 dark:text-purple-400 font-medium mt-1" onclick="switchTab('medications')"><i class="fa-solid fa-calendar-check mr-1"></i> Ver agenda do dia</p>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-900/30 text-purple-500 flex items-center justify-center text-xl">
+              <i class="fa-solid fa-pills"></i>
+            </div>
+          </div>
+
+          <!-- Last Blood Pressure -->
+          <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Última Pressão</p>
+              <h3 id="dashBPText" class="text-2xl font-black text-slate-800 dark:text-slate-100 mt-1">120/80 mmHg</h3>
+              <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1"><i class="fa-solid fa-check-circle mr-1"></i> Nível Normal</p>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-900/30 text-rose-500 flex items-center justify-center text-xl">
+              <i class="fa-solid fa-heart-pulse"></i>
+            </div>
+          </div>
+
+          <!-- IMC Summary -->
+          <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Índice IMC</p>
+              <h3 id="dashIMCText" class="text-2xl font-black text-slate-800 dark:text-slate-100 mt-1">22.5</h3>
+              <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1"><i class="fa-solid fa-circle-check mr-1"></i> Peso Ideal</p>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-900/30 text-amber-500 flex items-center justify-center text-xl">
+              <i class="fa-solid fa-weight-scale"></i>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Daily Health Tip & Emergency Dialers Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- Daily Preventive Tip Card -->
+          <div class="lg:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-6 shadow-sm border border-slate-700 relative flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <span class="text-xs font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full flex items-center space-x-1">
+                  <i class="fa-solid fa-lightbulb"></i>
+                  <span>Dica de Saúde Preventiva</span>
+                </span>
+                <button onclick="rotateDailyTip()" title="Nova Dica" class="text-xs text-slate-400 hover:text-white transition flex items-center space-x-1">
+                  <i class="fa-solid fa-rotate"></i>
+                  <span>Alternar</span>
+                </button>
+              </div>
+              <h3 id="dailyTipTitle" class="text-lg font-bold text-slate-100">Alimentação Consciente & Hidratação</h3>
+              <p id="dailyTipBody" class="mt-2 text-sm text-slate-300 leading-relaxed">A ingestão regular de água ao longo do dia auxilia na regulação da pressão arterial, melhora o foco mental e mantém o bom funcionamento dos rins. Evite consumir líquidos apenas quando sentir sede forte.</p>
+            </div>
+            <div class="mt-6 pt-4 border-t border-slate-700/60 flex items-center justify-between text-xs text-slate-400">
+              <span>Atualizado diariamente</span>
+              <span class="text-brand-400 font-semibold cursor-pointer hover:underline" onclick="switchTab('ai-assistant')">Pergunte mais ao Gemini IA &rarr;</span>
+            </div>
+          </div>
+
+          <!-- Quick Emergency Dial Box -->
+          <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between">
+            <div>
+              <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center space-x-2 mb-3">
+                <i class="fa-solid fa-phone-volume text-rose-500"></i>
+                <span>Discagem Rápida Brasil</span>
+              </h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Ligue imediatamente em situações de urgência ou de risco à vida.</p>
+              
+              <div class="space-y-2">
+                <a href="tel:192" class="flex items-center justify-between bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/40 p-2.5 rounded-xl border border-rose-200/60 dark:border-rose-800/40 transition">
+                  <span class="text-xs font-bold text-rose-700 dark:text-rose-300">SAMU - Urgência Médica</span>
+                  <span class="text-sm font-extrabold text-rose-600 dark:text-rose-400 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-lg shadow-xs">192</span>
+                </a>
+                <a href="tel:193" class="flex items-center justify-between bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 p-2.5 rounded-xl border border-amber-200/60 dark:border-amber-800/40 transition">
+                  <span class="text-xs font-bold text-amber-800 dark:text-amber-300">Bombeiros - Resgate</span>
+                  <span class="text-sm font-extrabold text-amber-600 dark:text-amber-400 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-lg shadow-xs">193</span>
+                </a>
+                <a href="tel:188" class="flex items-center justify-between bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/40 p-2.5 rounded-xl border border-teal-200/60 dark:border-teal-800/40 transition">
+                  <span class="text-xs font-bold text-teal-800 dark:text-teal-300">CVV - Apoio Emocional</span>
+                  <span class="text-sm font-extrabold text-teal-600 dark:text-teal-400 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-lg shadow-xs">188</span>
+                </a>
+              </div>
+            </div>
+
+            <button onclick="switchTab('emergency')" class="mt-4 text-xs text-center text-brand-600 dark:text-brand-400 font-bold hover:underline">
+              Ver todos os números e Primeiros Socorros &rarr;
+            </button>
+          </div>
+
+        </div>
+
+      </section>
+
+      <section id="tab-emergency" class="tab-content hidden space-y-6">
+        
+        <!-- Header banner -->
+        <div class="bg-rose-600 text-white p-6 rounded-3xl shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="space-y-1 text-center sm:text-left">
+            <h2 class="text-2xl font-extrabold flex items-center justify-center sm:justify-start space-x-2">
+              <i class="fa-solid fa-kit-medical"></i>
+              <span>Central de Emergência & Primeiros Socorros</span>
+            </h2>
+            <p class="text-rose-100 text-sm">Números essenciais de socorro público no Brasil e condutas de primeiros socorros.</p>
+          </div>
+          <button onclick="openEmergencyModal()" class="bg-white text-rose-700 hover:bg-rose-50 font-black text-sm px-5 py-3 rounded-2xl shadow-lg transition flex flex-shrink-0 items-center space-x-2">
+            <i class="fa-solid fa-id-card text-lg"></i>
+            <span>ABRIR FICHA MÉDICA FULLSCREEN</span>
+          </button>
+        </div>
+
+        <!-- Call numbers grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <a href="tel:192" class="bg-white dark:bg-slate-800 p-4 rounded-2xl border-2 border-rose-500/30 hover:border-rose-500 text-center shadow-xs transition group">
+            <p class="text-2xl font-black text-rose-600 dark:text-rose-400 group-hover:scale-110 transition-transform">192</p>
+            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1">SAMU</p>
+            <p class="text-[10px] text-slate-400">Ambulância e Urgência</p>
+          </a>
+          <a href="tel:193" class="bg-white dark:bg-slate-800 p-4 rounded-2xl border-2 border-amber-500/30 hover:border-amber-500 text-center shadow-xs transition group">
+            <p class="text-2xl font-black text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform">193</p>
+            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1">Bombeiros</p>
+            <p class="text-[10px] text-slate-400">Resgate e Incêndios</p>
+          </a>
+          <a href="tel:190" class="bg-white dark:bg-slate-800 p-4 rounded-2xl border-2 border-blue-500/30 hover:border-blue-500 text-center shadow-xs transition group">
+            <p class="text-2xl font-black text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">190</p>
+            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1">Polícia Militar</p>
+            <p class="text-[10px] text-slate-400">Ocorrências e Segurança</p>
+          </a>
+          <a href="tel:136" class="bg-white dark:bg-slate-800 p-4 rounded-2xl border-2 border-emerald-500/30 hover:border-emerald-500 text-center shadow-xs transition group">
+            <p class="text-2xl font-black text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">136</p>
+            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1">Disque Saúde</p>
+            <p class="text-[10px] text-slate-400">Informações do SUS</p>
+          </a>
+          <a href="tel:188" class="bg-white dark:bg-slate-800 p-4 rounded-2xl border-2 border-teal-500/30 hover:border-teal-500 text-center shadow-xs transition group">
+            <p class="text-2xl font-black text-teal-600 dark:text-teal-400 group-hover:scale-110 transition-transform">188</p>
+            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1">CVV Apoio</p>
+            <p class="text-[10px] text-slate-400">Apoio Emocional 24h</p>
+          </a>
+        </div>
+
+        <!-- First Aid Interactive Search & Accordion -->
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Guia Prático de Primeiros Socorros</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Pesquise condutas imediatas antes da chegada do socorro especializado.</p>
+            </div>
+            <div class="relative w-full sm:w-64">
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
+              <input type="text" id="firstAidSearchInput" onkeyup="filterFirstAid()" placeholder="Buscar ex: Engasgo, RCP..." class="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
+            </div>
+          </div>
+
+          <div class="space-y-3" id="firstAidListContainer">
+            <!-- First aid cards dynamically rendered or populated -->
+          </div>
+        </div>
+
+      </section>
+
+      <section id="tab-hospitals" class="tab-content hidden space-y-6">
+        
+        <!-- Search & Filters -->
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+          <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center space-x-2">
+                <i class="fa-solid fa-hospital-user text-brand-500"></i>
+                <span>Localizador de Unidades de Saúde</span>
+              </h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Encontre Hospitais, UPAs 24h e Postos de Saúde (UBS) próximos a você.</p>
+            </div>
+
+            <!-- Search box -->
+            <div class="relative w-full md:w-80">
+              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+              <input type="text" id="hospitalSearchInput" onkeyup="filterHospitals()" placeholder="Buscar por hospital, bairro ou especialidade..." class="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 text-slate-800 dark:text-slate-100">
+            </div>
+          </div>
+
+          <!-- Type filter badges -->
+          <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-2">Filtrar Tipo:</span>
+            <button onclick="setHospitalFilter('all')" id="filter-type-all" class="h-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition bg-brand-600 text-white">Todos</button>
+            <button onclick="setHospitalFilter('UPA')" id="filter-type-UPA" class="h-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">UPA 24h</button>
+            <button onclick="setHospitalFilter('Hospital')" id="filter-type-Hospital" class="h-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Hospitais Gerais</button>
+            <button onclick="setHospitalFilter('UBS')" id="filter-type-UBS" class="h-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">UBS / Postos</button>
+            <button onclick="setHospitalFilter('Maternidade')" id="filter-type-Maternidade" class="h-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Maternidades</button>
+          </div>
+        </div>
+
+        <!-- Hospitals List Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4" id="hospitalsGridContainer">
+          <!-- Populated by JavaScript -->
+        </div>
+
+      </section>
+
+      <section id="tab-triage" class="tab-content hidden space-y-6">
+        
+        <div class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-6">
+          
+          <div class="border-b border-slate-100 dark:border-slate-700 pb-4">
+            <span class="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold px-3 py-1 rounded-full inline-block mb-2">Protocolo de Avaliação Prévia</span>
+            <h2 class="text-2xl font-extrabold text-slate-800 dark:text-slate-100">Triagem Inteligente de Sintomas</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Responda ao questionário abaixo para obter uma orientação sobre o nível de urgência recomendada.</p>
+          </div>
+
+          <!-- Medical Disclaimer Box -->
+          <div class="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 p-4 rounded-xl text-amber-800 dark:text-amber-200 text-xs leading-relaxed flex items-start space-x-3">
+            <i class="fa-solid fa-triangle-exclamation text-amber-500 text-lg mt-0.5 flex-shrink-0"></i>
+            <div>
+              <p class="font-bold uppercase tracking-wider mb-0.5">Aviso Médico Importante</p>
+              <p>Esta ferramenta tem caráter exclusivamente educativo e orientativo de triagem básica. Ela <strong>NÃO substitui o diagnóstico médico profissional</strong>. Em caso de dor no peito intensa, falta de ar grave ou inconsciência, ligue imediatamente para o SAMU (192).</p>
+            </div>
+          </div>
+
+          <!-- Wizard Container -->
+          <div id="triageWizard" class="space-y-6">
+            
+            <!-- Step 1: Select Symptoms -->
+            <div id="triageStep1" class="space-y-4">
+              <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">1. Selecione os sintomas que você está apresentando:</h3>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="symptomsList">
+                <!-- Checkboxes populated via JS -->
+              </div>
+
+              <div class="pt-4 flex justify-end">
+                <button onclick="goToTriageStep2()" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition shadow-sm">
+                  Avançar para Perguntas Específicas &rarr;
+                </button>
+              </div>
+            </div>
+
+            <!-- Step 2: Red Flags -->
+            <div id="triageStep2" class="space-y-4 hidden">
+              <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">2. Marque se você possui algum destes sinais de alerta:</h3>
+              
+              <div class="space-y-3" id="redFlagsList">
+                <!-- Red flag items -->
+              </div>
+
+              <div class="pt-4 flex items-center justify-between">
+                <button onclick="backToTriageStep1()" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold px-4 py-2.5 rounded-xl text-sm hover:bg-slate-200 transition">
+                  &larr; Voltar
+                </button>
+                <button onclick="calculateTriageResult()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition shadow-md">
+                  Gerar Avaliação de Risco
+                </button>
+              </div>
+            </div>
+
+            <!-- Step 3: Result Display -->
+            <div id="triageStep3" class="space-y-6 hidden">
+              <div id="triageResultCard" class="p-6 rounded-2xl text-white space-y-3 transition-all">
+                <!-- Dynamic result content -->
+              </div>
+
+              <div class="flex flex-wrap gap-3 pt-2">
+                <button onclick="resetTriage()" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-slate-200 transition">
+                  Refazer Triagem
+                </button>
+                <button onclick="switchTab('hospitals')" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition shadow-sm">
+                  Ver Unidades de Saúde Próximas
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      <section id="tab-medications" class="tab-content hidden space-y-6">
+        
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div>
+            <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center space-x-2">
+              <i class="fa-solid fa-pills text-purple-500"></i>
+              <span>Gestão de Medicamentos & Alertas</span>
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Cadastre seus remédios, marque tomados no dia e receba avisos de recarga de estoque.</p>
+          </div>
+          <button onclick="openAddMedModal()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition shadow-sm flex items-center space-x-2">
+            <i class="fa-solid fa-plus"></i>
+            <span>Cadastrar Medicamento</span>
+          </button>
+        </div>
+
+        <!-- Medication List -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="medicationsContainer">
+          <!-- Populated by JS -->
+        </div>
+
+      </section>
+
+      <section id="tab-vitals" class="tab-content hidden space-y-6">
+        
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div>
+            <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center space-x-2">
+              <i class="fa-solid fa-heart-pulse text-rose-500"></i>
+              <span>Diário de Saúde & Sinais Vitais</span>
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Acompanhe a evolução de sua pressão, glicemia, batimentos e peso em gráficos visuais.</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button onclick="openAddVitalModal()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition shadow-sm flex items-center space-x-1.5">
+              <i class="fa-solid fa-plus"></i>
+              <span>Novo Registro</span>
+            </button>
+            <button onclick="window.print()" class="no-print bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold px-3 py-2.5 rounded-xl text-sm hover:bg-slate-200 transition" title="Imprimir Relatório">
+              <i class="fa-solid fa-print"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <!-- Pressure Chart -->
+          <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
+            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+              <span>Pressão Arterial (mmHg)</span>
+              <span class="text-xs font-semibold text-rose-500"><i class="fa-solid fa-heart-pulse mr-1"></i> Sistólica / Diastólica</span>
+            </h3>
+            <div class="h-64 relative">
+              <canvas id="bpChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Glucose & Heart Rate Chart -->
+          <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
+            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+              <span>Glicemia (mg/dL) & Frequência Cardíaca (BPM)</span>
+              <span class="text-xs font-semibold text-emerald-500"><i class="fa-solid fa-droplet mr-1"></i> Glicose / BPM</span>
+            </h3>
+            <div class="h-64 relative">
+              <canvas id="glucoseChart"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Recent Logs Table -->
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+          <h3 class="text-base font-bold text-slate-800 dark:text-slate-100">Histórico Recente de Aferições</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+              <thead class="bg-slate-50 dark:bg-slate-700/50 uppercase text-[10px] text-slate-400 font-bold border-b border-slate-100 dark:border-slate-700">
+                <tr>
+                  <th class="p-3">Data / Hora</th>
+                  <th class="p-3">Pressão</th>
+                  <th class="p-3">Glicemia</th>
+                  <th class="p-3">BPM</th>
+                  <th class="p-3">Peso</th>
+                  <th class="p-3">Sono</th>
+                  <th class="p-3 text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody id="vitalsTableBody" class="divide-y divide-slate-100 dark:divide-slate-700">
+                <!-- Log rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <section id="tab-calculators" class="tab-content hidden space-y-6">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <!-- BMI Calculator Card -->
+          <div class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-6">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-amber-500 bg-amber-50 dark:bg-amber-900/30 px-3 py-1 rounded-full">Avaliação Corporal</span>
+              <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mt-2">Calculadora de IMC (OMS)</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Descubra seu Índice de Massa Corporal e faixa recomendada de peso.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Peso (kg)</label>
+                <input type="number" id="imcWeightInput" value="70" step="0.1" class="w-full p-2.5 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Altura (cm)</label>
+                <input type="number" id="imcHeightInput" value="175" class="w-full p-2.5 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
+              </div>
+            </div>
+
+            <button onclick="calculateIMC()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-sm">
+              Calcular IMC
+            </button>
+
+            <!-- IMC Result Box -->
+            <div id="imcResultBox" class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 text-center space-y-2">
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Seu IMC Calculado:</p>
+              <p id="imcValText" class="text-3xl font-black text-slate-800 dark:text-slate-100">22.86</p>
+              <p id="imcStatusBadge" class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">Peso Normal</p>
+              <p id="imcAdviceText" class="text-xs text-slate-600 dark:text-slate-300 pt-1 leading-relaxed">Você está na faixa de peso saudável. Mantenha uma alimentação equilibrada e rotina de atividades físicas ativas.</p>
+            </div>
+          </div>
+
+          <!-- Hydration Intake Calculator & Interactive Cup Counter -->
+          <div class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-6">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-sky-500 bg-sky-50 dark:bg-sky-900/30 px-3 py-1 rounded-full">Metabolismo & Água</span>
+              <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mt-2">Calculadora & Diário de Hidratação</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Calcule sua meta ideal de água baseada no peso e registre seu consumo diário.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Seu Peso (kg)</label>
+                <input type="number" id="waterWeightInput" value="70" onchange="updateWaterGoalFromInput()" class="w-full p-2 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Atividade Física</label>
+                <select id="waterActivitySelect" onchange="updateWaterGoalFromInput()" class="w-full p-2 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl">
+                  <option value="sedentary">Leve / Sedentário (+0ml)</option>
+                  <option value="moderate" selected>Moderada (+350ml)</option>
+                  <option value="intense">Intensa (+700ml)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Goal Display & Progress Bar -->
+            <div class="space-y-2">
+              <div class="flex justify-between text-xs font-bold">
+                <span class="text-slate-500 dark:text-slate-400">Consumido Hoje:</span>
+                <span id="waterGoalProgressText" class="text-sky-600 dark:text-sky-400">0 / 2450 ml (0%)</span>
+              </div>
+              <div class="w-full h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div id="waterProgressBar" class="h-full bg-gradient-to-r from-sky-400 to-brand-600 w-0 transition-all duration-500"></div>
+              </div>
+            </div>
+
+            <!-- Quick Add Water Buttons -->
+            <div class="grid grid-cols-3 gap-2">
+              <button onclick="addWater(250)" class="bg-sky-50 dark:bg-sky-900/30 hover:bg-sky-100 dark:hover:bg-sky-900/50 text-sky-700 dark:text-sky-300 font-bold p-3 rounded-2xl text-xs flex flex-col items-center justify-center transition">
+                <i class="fa-solid fa-glass-water text-lg mb-1"></i>
+                <span>+250 ml (Copo)</span>
+              </button>
+              <button onclick="addWater(500)" class="bg-sky-50 dark:bg-sky-900/30 hover:bg-sky-100 dark:hover:bg-sky-900/50 text-sky-700 dark:text-sky-300 font-bold p-3 rounded-2xl text-xs flex flex-col items-center justify-center transition">
+                <i class="fa-solid fa-bottle-water text-lg mb-1"></i>
+                <span>+500 ml (Garrafa)</span>
+              </button>
+              <button onclick="resetWater()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 font-bold p-3 rounded-2xl text-xs flex flex-col items-center justify-center transition">
+                <i class="fa-solid fa-arrow-rotate-left text-lg mb-1"></i>
+                <span>Zerar</span>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      <section id="tab-ai-assistant" class="tab-content hidden space-y-6">
+        
+        <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col h-[650px] overflow-hidden">
+          
+          <!-- Assistant Header -->
+          <div class="p-4 sm:p-5 bg-gradient-to-r from-teal-600 to-brand-600 text-white flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-xl backdrop-blur-sm">
+                <i class="fa-solid fa-robot"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-base leading-tight">Assistente Virtual VidaSaúde IA</h3>
+                <p class="text-xs text-teal-100 flex items-center space-x-1">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
+                  <span>Alimentado por Gemini 3 Flash API</span>
+                </p>
+              </div>
+            </div>
+
+            <button onclick="clearAIChat()" class="text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-xl font-medium transition backdrop-blur-sm">
+              Limpar Conversa
+            </button>
+          </div>
+
+          <!-- Chat Messages Area -->
+          <div id="aiChatMessages" class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4 custom-scrollbar bg-slate-50/50 dark:bg-slate-900/50">
+            <!-- Initial Welcome Message -->
+            <div class="flex items-start space-x-3">
+              <div class="w-8 h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center text-sm flex-shrink-0">
+                <i class="fa-solid fa-robot"></i>
+              </div>
+              <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 max-w-xl shadow-xs text-xs sm:text-sm text-slate-700 dark:text-slate-200 space-y-2">
+                <p class="font-bold text-teal-600 dark:text-teal-400">Olá! Sou o Assistente VidaSaúde Pro.</p>
+                <p>Estou aqui para tirar dúvidas sobre hábitos saudáveis, alimentos nutritivos, dicas de prevenção e termos médicos simples!</p>
+                <p class="text-[11px] text-slate-400 italic pt-1 border-t border-slate-100 dark:border-slate-700">*Lembrete: Minhas respostas são estritamente informativas e não substituem o diagnóstico de um médico qualificado.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Prompts suggestions -->
+          <div class="px-4 py-2 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700/60 overflow-x-auto flex space-x-2 custom-scrollbar">
+            <button onclick="sendQuickPrompt('Quais são boas escolhas para um café da manhã saudável e nutritivo?')" class="text-[11px] bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-full whitespace-nowrap transition">Café da Manhã Saudável</button>
+            <button onclick="sendQuickPrompt('Como posso melhorar a qualidade do meu sono de forma natural?')" class="text-[11px] bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-full whitespace-nowrap transition">Dicas de Sono</button>
+            <button onclick="sendQuickPrompt('Qual a diferença entre Pressão Sistólica e Diastólica?')" class="text-[11px] bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-full whitespace-nowrap transition">O que é Pressão Sistólica?</button>
+            <button onclick="sendQuickPrompt('Quais alimentos ajudam a fortalecer o sistema imunológico?')" class="text-[11px] bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-full whitespace-nowrap transition">Fortalecer Imunidade</button>
+          </div>
+
+          <!-- Chat Input -->
+          <div class="p-3 sm:p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex items-center space-x-2">
+            <input type="text" id="aiChatInput" onkeypress="if(event.key==='Enter') sendAIMessage()" placeholder="Digite sua pergunta de saúde..." class="flex-1 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-100 text-xs sm:text-sm px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500">
+            <button onclick="sendAIMessage()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition flex items-center space-x-1 shadow-sm">
+              <span>Enviar</span>
+              <i class="fa-solid fa-paper-plane text-xs"></i>
+            </button>
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <div id="emergencyModal" class="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto no-print">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-2xl w-full border-4 border-rose-600 shadow-2xl overflow-hidden my-8">
+      
+      <!-- Modal Header -->
+      <div class="bg-rose-600 p-5 text-white flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <i class="fa-solid fa-id-card text-3xl"></i>
+          <div>
+            <h2 class="text-xl font-black uppercase tracking-wider">Ficha Médica de Emergência</h2>
+            <p class="text-xs text-rose-100">Para uso de Socorristas, Médicos e Atendimento de Urgência</p>
+          </div>
+        </div>
+        <button onclick="closeEmergencyModal()" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center text-lg transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
+        
+        <!-- Essential Identity & Blood Type -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-rose-50 dark:bg-rose-900/20 p-4 rounded-2xl border border-rose-200 dark:border-rose-800">
+          <div class="sm:col-span-2">
+            <p class="text-[10px] uppercase font-bold text-slate-400">Nome do Paciente</p>
+            <p id="emModalName" class="text-lg font-black text-slate-800 dark:text-slate-100">João da Silva Santos</p>
+            <p id="emModalDob" class="text-xs text-slate-500 dark:text-slate-400">Nascimento: 15/04/1985 (39 anos)</p>
+          </div>
+          <div class="text-center bg-rose-600 text-white p-3 rounded-xl flex flex-col justify-center items-center">
+            <p class="text-[10px] uppercase font-bold text-rose-200">Tipo Sanguíneo</p>
+            <p id="emModalBlood" class="text-2xl font-black">O+</p>
+          </div>
+        </div>
+
+        <!-- Emergency Contact Dial -->
+        <div class="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-2xl border border-amber-200 dark:border-amber-800/50 flex items-center justify-between">
+          <div>
+            <p class="text-[10px] uppercase font-bold text-amber-700 dark:text-amber-400">Contato de Emergência Familiar</p>
+            <p id="emModalContactName" class="text-sm font-bold text-slate-800 dark:text-slate-100">Maria Santos (Esposa)</p>
+            <p id="emModalContactPhone" class="text-xs font-mono text-slate-600 dark:text-slate-300">(11) 98765-4321</p>
+          </div>
+          <a id="emModalDialBtn" href="tel:11987654321" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center space-x-1.5 shadow-sm transition">
+            <i class="fa-solid fa-phone"></i>
+            <span>Ligar Agora</span>
+          </a>
+        </div>
+
+        <!-- Medical Details Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-600">
+            <p class="text-xs font-bold text-rose-600 dark:text-rose-400 mb-1 flex items-center">
+              <i class="fa-solid fa-hand-dots mr-1.5"></i> Alergias Conhecidas
+            </p>
+            <p id="emModalAllergies" class="text-xs font-semibold text-slate-700 dark:text-slate-200">Dipirona, Penicilina, Picada de Abelha.</p>
+          </div>
+
+          <div class="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-600">
+            <p class="text-xs font-bold text-purple-600 dark:text-purple-400 mb-1 flex items-center">
+              <i class="fa-solid fa-capsules mr-1.5"></i> Medicamentos Contínuos
+            </p>
+            <p id="emModalMeds" class="text-xs font-semibold text-slate-700 dark:text-slate-200">Losartana 50mg (1x ao dia), Metformina 850mg.</p>
+          </div>
+
+          <div class="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-600">
+            <p class="text-xs font-bold text-blue-600 dark:text-blue-400 mb-1 flex items-center">
+              <i class="fa-solid fa-notes-medical mr-1.5"></i> Doenças Crônicas / Condições
+            </p>
+            <p id="emModalConditions" class="text-xs font-semibold text-slate-700 dark:text-slate-200">Hipertensão Arterial, Diabetes Tipo 2.</p>
+          </div>
+
+          <div class="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-600">
+            <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 mb-1 flex items-center">
+              <i class="fa-solid fa-hospital-user mr-1.5"></i> Convênio / Plano de Saúde
+            </p>
+            <p id="emModalPlan" class="text-xs font-semibold text-slate-700 dark:text-slate-200">SUS / Unimed Nacional (Cartão: 987654321)</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer & Edit Mode Toggle -->
+      <div class="p-4 bg-slate-100 dark:bg-slate-700 border-t border-slate-200 dark:border-slate-600 flex items-center justify-between">
+        <button onclick="toggleEmergencyEdit()" class="text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline">
+          <i class="fa-solid fa-pen-to-square mr-1"></i> Editar Minha Ficha Médica
+        </button>
+        <button onclick="closeEmergencyModal()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-5 py-2 rounded-xl text-xs">
+          Fechar
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Add Med Modal -->
+  <div id="addMedModal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 border border-slate-200 dark:border-slate-700 shadow-xl">
+      <div class="flex justify-between items-center">
+        <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Cadastrar Medicamento</h3>
+        <button onclick="closeAddMedModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Nome do Remédio</label>
+          <input type="text" id="newMedName" placeholder="Ex: Paracetamol, Losartana" class="w-full p-2.5 text-xs bg-slate-50 dark:bg-slate-700 border rounded-xl">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Dosagem</label>
+            <input type="text" id="newMedDose" placeholder="Ex: 500 mg, 1 comprimido" class="w-full p-2.5 text-xs bg-slate-50 dark:bg-slate-700 border rounded-xl">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Horário / Frequência</label>
+            <input type="text" id="newMedSchedule" placeholder="Ex: 8/8h ou 08:00" class="w-full p-2.5 text-xs bg-slate-50 dark:bg-slate-700 border rounded-xl">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Estoque Inicial (Unidades)</label>
+          <input type="number" id="newMedStock" value="20" class="w-full p-2.5 text-xs bg-slate-50 dark:bg-slate-700 border rounded-xl">
+        </div>
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-2">
+        <button onclick="closeAddMedModal()" class="px-4 py-2 text-xs font-semibold text-slate-600">Cancelar</button>
+        <button onclick="saveNewMedication()" class="bg-purple-600 text-white font-bold px-5 py-2 rounded-xl text-xs">Salvar Remédio</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Vital Modal -->
+  <div id="addVitalModal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 border border-slate-200 dark:border-slate-700 shadow-xl">
+      <div class="flex justify-between items-center">
+        <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Novo Registro de Sinais Vitais</h3>
+        <button onclick="closeAddVitalModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="space-y-3">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Pressão Sistólica</label>
+            <input type="number" id="vitalSys" value="120" placeholder="120" class="w-full p-2.5 text-xs bg-slate-50 dark:bg-slate-700 border rounded-xl">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Pressão Diastólica</label>
+            <input type="number" id="vitalDia" value="80" placeholder="80" class="w-full p-2.5 text-xs bg-slate-50 dark:bg-slate-700 border rounded-xl">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Glicemia (mg/dL)</label>
+            <input type="number" id="vitalGlucose" value="95" placeholder="95" class="w-full p-2.5 text-xs bg-slate-50 dark:bg-slate-700 border rounded-xl">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Batimentos (BPM)</label>
+            <input type="number" id="vitalBpm" value="72" placeholder="72" class="w-full p-2.5 text-xs bg-slate-50 dark:bg-slate-700 border rounded-xl">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Peso (kg)</label>
+            <input type="number" id="vitalWeight" value="70.5" step="0.1" class="w-full p-2.5 text-xs bg-slate-50 dark:bg-slate-700 border rounded-xl">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Sono (Horas)</label>
+            <input type="number" id="vitalSleep" value="7.5" step="0.5" class="w-full p-2.5 text-xs bg-slate-50 dark:bg-slate-700 border rounded-xl">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-2">
+        <button onclick="closeAddVitalModal()" class="px-4 py-2 text-xs font-semibold text-slate-600">Cancelar</button>
+        <button onclick="saveNewVitalLog()" class="bg-rose-600 text-white font-bold px-5 py-2 rounded-xl text-xs">Registrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    
+    // Core Application Data Stores
+    let appState = {
+      waterIntake: 0,
+      waterGoal: 2450,
+      medications: [
+        { id: 1, name: "Losartana Potássica", dose: "50 mg", schedule: "08:00 (1x ao dia)", stock: 18, takenToday: true },
+        { id: 2, name: "Metformina", dose: "850 mg", schedule: "Após o Almoço", stock: 12, takenToday: false },
+        { id: 3, name: "Vitamina D3", dose: "2000 UI", schedule: "09:00", stock: 25, takenToday: true }
+      ],
+      vitalsLogs: [
+        { id: 1, date: "02/10/2026", time: "08:30", sys: 118, dia: 78, glucose: 92, bpm: 70, weight: 70.8, sleep: 7.5 },
+        { id: 2, date: "03/10/2026", time: "08:15", sys: 122, dia: 82, glucose: 98, bpm: 74, weight: 70.6, sleep: 8.0 },
+        { id: 3, date: "04/10/2026", time: "09:00", sys: 120, dia: 80, glucose: 94, bpm: 72, weight: 70.5, sleep: 7.0 },
+        { id: 4, date: "05/10/2026", time: "08:00", sys: 119, dia: 79, glucose: 90, bpm: 68, weight: 70.3, sleep: 8.2 },
+        { id: 5, date: "06/10/2026", time: "08:30", sys: 121, dia: 81, glucose: 95, bpm: 71, weight: 70.2, sleep: 7.8 }
+      ],
+      emergencyProfile: {
+        name: "João da Silva Santos",
+        dob: "15/04/1985",
+        blood: "O+",
+        contactName: "Maria Santos (Esposa)",
+        contactPhone: "(11) 98765-4321",
+        allergies: "Dipirona, Penicilina, Picada de Abelha",
+        meds: "Losartana 50mg, Metformina 850mg",
+        conditions: "Hipertensão Arterial, Diabetes Tipo 2",
+        plan: "SUS / Unimed Nacional (Cartão: 987654321)"
+      }
+    };
+
+    // Load persisted state if exists
+    function loadPersistedData() {
+      const savedState = localStorage.getItem("vidaSaudeState_v1");
+      if (savedState) {
+        try {
+          const parsed = JSON.parse(savedState);
+          appState = { ...appState, ...parsed };
+        } catch (e) {
+          console.error("Erro ao carregar dados salvos:", e);
+        }
+      }
+    }
+
+    function savePersistedData() {
+      localStorage.setItem("vidaSaudeState_v1", JSON.stringify(appState));
+    }
+
+    const healthUnitsData = [
+      {
+        id: 1,
+        name: "Hospital das Clínicas Central",
+        type: "Hospital",
+        address: "Av. Dr. Enéas Carvalho, 255 - Cerqueira César",
+        phone: "(11) 2661-0000",
+        hours: "Atendimento 24h",
+        specialties: ["Pronto-Socorro Geral", "Ortopedia", "Cardiologia", "Pediatria"],
+        waitTime: "Médio (~40 min)",
+        badgeColor: "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300",
+        mapsQuery: "Hospital+das+Clinicas+Central"
+      },
+      {
+        id: 2,
+        name: "UPA 24h Zona Sul - Dr. José",
+        type: "UPA",
+        address: "Rua das Oliveiras, 1400 - Vila Mariana",
+        phone: "(11) 5081-9988",
+        hours: "24 Horas Ininterrupto",
+        specialties: ["Pronto Atendimento Adulto e Infantil", "Inalação", "Exames de Urgência"],
+        waitTime: "Rápido (~15 min)",
+        badgeColor: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300",
+        mapsQuery: "UPA+24h+Zona+Sul"
+      },
+      {
+        id: 3,
+        name: "UBS Jardim das Flores",
+        type: "UBS",
+        address: "Rua dos Cravos, 85 - Jardim das Flores",
+        phone: "(11) 3982-1122",
+        hours: "07:00 às 19:00 (Seg a Sex)",
+        specialties: ["Clínica Geral", "Vacinação SUS", "Pré-Natal", "Odontologia"],
+        waitTime: "Por Agendamento / Fila Normal",
+        badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
+        mapsQuery: "UBS+Jardim+das+Flores"
+      },
+      {
+        id: 4,
+        name: "Maternidade e Hospital Materno-Infantil",
+        type: "Maternidade",
+        address: "Av. Paulista, 2100 - Bela Vista",
+        phone: "(11) 3170-5000",
+        hours: "24 Horas",
+        specialties: ["Obstetrícia", "Ginecologia", "UTI Neonatal", "Pediatria"],
+        waitTime: "Rápido (~20 min)",
+        badgeColor: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300",
+        mapsQuery: "Maternidade+Materno+Infantil"
+      },
+      {
+        id: 5,
+        name: "UPA 24h Zona Norte",
+        type: "UPA",
+        address: "Av. Cruzeiro do Sul, 3200 - Santana",
+        phone: "(11) 2221-4433",
+        hours: "24 Horas Ininterrupto",
+        specialties: ["Pronto-Socorro Traumatologia", "Clínica Médica", "Suturas"],
+        waitTime: "Alto (~75 min)",
+        badgeColor: "bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-300",
+        mapsQuery: "UPA+24h+Zona+Norte"
+      }
+    ];
+
+    const firstAidGuides = [
+      {
+        id: "rcp",
+        title: "RCP - Ressuscitação Cardiopulmonar (Parada Cardíaca)",
+        icon: "fa-heart-circle-bolt",
+        steps: [
+          "Verifique se o local é seguro e chame imediatamente o <strong>SAMU (192)</strong>.",
+          "Verifique a resposta e a respiração da vítima por até 10 segundos.",
+          "Se a vítima não responder e não respirar, posicione as mãos no centro do peito.",
+          "Realize compressões rápidas e fortes (100 a 120 compressões por minuto) afundando o tórax cerca de 5 cm.",
+          "Mantenha o ritmo sem interrupções até a chegada do resgate especializado."
+        ]
+      },
+      {
+        id: "heimlich",
+        title: "Engasgo Grave (Manobra de Heimlich)",
+        icon: "fa-person-dots-from-line",
+        steps: [
+          "<strong>Em Adultos Conscientes:</strong> Posicione-se atrás da vítima e envolva a cintura com os braços.",
+          "Feche uma das mãos com o polegar para dentro e coloque-a entre o umbigo e o osso do peito.",
+          "Pressione a mão para dentro e para cima com golpes rápidos em 'J'.",
+          "<strong>Em Bebês (< 1 ano):</strong> Coloque o bebê de bruços sobre seu antebraço inclinado para baixo.",
+          "Aplique 5 tapas firmes no meio das costas e depois vire o bebê dando 5 compressões no peito."
+        ]
+      },
+      {
+        id: "burns",
+        title: "Queimaduras Térmicas e Químicas",
+        icon: "fa-fire-flame-curled",
+        steps: [
+          "Lave a região afetada imediatamente com <strong>água corrente limpa e fria por 10 a 15 minutos</strong>.",
+          "<strong>NUNCA</strong> passe pasta de dente, manteiga, óleo ou sabão na queimadura.",
+          "Não estrague ou fure as bolhas formadas.",
+          "Cubra suavemente a área com pano limpo ou gaze estéril sem apertar e procure atendimento médico."
+        ]
+      },
+      {
+        id: "fainting",
+        title: "Desmaio e Convulsões",
+        icon: "fa-bed-pulse",
+        steps: [
+          "<strong>Em caso de Desmaio:</strong> Deite a pessoa de costas e eleve as pernas cerca de 30 cm para facilitar o fluxo sanguíneo ao cérebro.",
+          "Afrouxe roupas apertadas e garanta boa ventilação no ambiente.",
+          "<strong>Em caso de Convulsão:</strong> Afaste objetos pontiagudos ao redor para evitar machucados.",
+          "Proteja a cabeça com um casaco macio. <strong>NUNCA coloque os dedos ou objetos dentro da boca da pessoa!</strong>",
+          "Cronometre a crise e ligue 192 se durar mais de 5 minutos."
+        ]
+      },
+      {
+        id: "bites",
+        title: "Picadas de Animais Peçonhentos (Cobras, Escorpiões, Aranhas)",
+        icon: "fa-bug-slash",
+        steps: [
+          "Mantenha a vítima em repouso e calma para desacelerar a circulação do veneno.",
+          "Lave o local afetado apenas com água e sabão.",
+          "<strong>NUNCA faça garrote/torniquete</strong> e não tente chupar ou cortar o local da picada.",
+          "Fotografe o animal de distância segura se possível e dirija-se imediatamente ao hospital mais próximo com soro antiofídico/escorpiônico."
+        ]
+      }
+    ];
+
+    const triageSymptoms = [
+      { id: "s1", text: "Dor ou pressão forte no peito", redFlag: true },
+      { id: "s2", text: "Dificuldade intensa para respirar ou falta de ar", redFlag: true },
+      { id: "s3", text: "Febre alta constante (acima de 38.5°C)", redFlag: false },
+      { id: "s4", text: "Tontura forte, confusão ou quase desmaio", redFlag: true },
+      { id: "s5", text: "Tosse contínua, coriza ou dor de garganta leve", redFlag: false },
+      { id: "s6", text: "Dor de cabeça repentina e de intensidade insuportável", redFlag: true },
+      { id: "s7", text: "Dores musculares e no corpo", redFlag: false },
+      { id: "s8", text: "Náuseas, enjoo ou episódios de vômito isolados", redFlag: false }
+    ];
+
+    const triageRedFlags = [
+      "A dor no peito irradia para o braço esquerdo, mandíbula ou costas?",
+      "Há lábios ou pontas dos dedos arroxeadas (cianose)?",
+      "Perda repentina de força de um lado do corpo ou dificuldade para falar?",
+      "Vômitos persistentes há mais de 24 horas sem conseguir reter líquidos?"
+    ];
+
+    const dailyTipsList = [
+      { title: "Alimentação Consciente & Hidratação", body: "A ingestão regular de água ao longo do dia auxilia na regulação da pressão arterial, melhora o foco mental e mantém o bom funcionamento dos rins." },
+      { title: "Qualidade do Sono & Imunidade", body: "Dormir de 7 a 8 horas por noite fortalece as células de defesa do organismo e ajuda na consolidação da memória e regulação hormonal." },
+      { title: "Caminhadas e Saúde Cardiovascular", body: "Apenas 30 minutos diários de caminhada moderada reduzem em até 30% os riscos de doenças cardíacas e ajudam no controle do colesterol." },
+      { title: "Saúde Mental & Pausas Ativas", body: "Fazer pausas de 5 minutos a cada hora de trabalho para respirar fundo reduz substancialmente os picos de cortisol e estresse diário." }
+    ];
+    let currentTipIndex = 0;
+
+    function rotateDailyTip() {
+      currentTipIndex = (currentTipIndex + 1) % dailyTipsList.length;
+      document.getElementById('dailyTipTitle').innerText = dailyTipsList[currentTipIndex].title;
+      document.getElementById('dailyTipBody').innerText = dailyTipsList[currentTipIndex].body;
+    }
+
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('liveClock').innerText = now.toLocaleTimeString('pt-BR');
+      document.getElementById('liveDate').innerText = now.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('text-brand-600', 'bg-brand-50', 'dark:bg-brand-900/30', 'dark:text-brand-400');
+        btn.classList.add('text-slate-600', 'dark:text-slate-300');
+      });
+
+      const activeNav = document.getElementById(`nav-${tabId}`);
+      if (activeNav) {
+        activeNav.classList.remove('text-slate-600', 'dark:text-slate-300');
+        activeNav.classList.add('text-brand-600', 'bg-brand-50', 'dark:bg-brand-900/30', 'dark:text-brand-400');
+      }
+
+      if (tabId === 'vitals') {
+        renderCharts();
+      }
+    }
+
+    let currentFontSize = 100;
+    function adjustFontSize(delta) {
+      currentFontSize = Math.min(Math.max(currentFontSize + (delta * 5), 85), 125);
+      document.documentElement.style.fontSize = `${currentFontSize}%`;
+    }
+
+    function toggleTheme() {
+      document.documentElement.classList.toggle('dark');
+    }
+
+    function openEmergencyModal() {
+      document.getElementById('emModalName').innerText = appState.emergencyProfile.name;
+      document.getElementById('emModalDob').innerText = `Nascimento: ${appState.emergencyProfile.dob}`;
+      document.getElementById('emModalBlood').innerText = appState.emergencyProfile.blood;
+      document.getElementById('emModalContactName').innerText = appState.emergencyProfile.contactName;
+      document.getElementById('emModalContactPhone').innerText = appState.emergencyProfile.contactPhone;
+      document.getElementById('emModalDialBtn').href = `tel:${appState.emergencyProfile.contactPhone.replace(/\D/g, '')}`;
+      document.getElementById('emModalAllergies').innerText = appState.emergencyProfile.allergies;
+      document.getElementById('emModalMeds').innerText = appState.emergencyProfile.meds;
+      document.getElementById('emModalConditions').innerText = appState.emergencyProfile.conditions;
+      document.getElementById('emModalPlan').innerText = appState.emergencyProfile.plan;
+
+      document.getElementById('emergencyModal').classList.remove('hidden');
+    }
+
+    function closeEmergencyModal() {
+      document.getElementById('emergencyModal').classList.add('hidden');
+    }
+
+    function toggleEmergencyEdit() {
+      const newName = prompt("Nome completo:", appState.emergencyProfile.name);
+      if (newName) appState.emergencyProfile.name = newName;
+      const newBlood = prompt("Tipo sanguíneo:", appState.emergencyProfile.blood);
+      if (newBlood) appState.emergencyProfile.blood = newBlood;
+      const newContact = prompt("Telefone do Contato de Emergência:", appState.emergencyProfile.contactPhone);
+      if (newContact) appState.emergencyProfile.contactPhone = newContact;
+      const newAllergies = prompt("Alergias conhecidas:", appState.emergencyProfile.allergies);
+      if (newAllergies) appState.emergencyProfile.allergies = newAllergies;
+
+      savePersistedData();
+      openEmergencyModal();
+    }
+
+    function renderFirstAidList(filter = '') {
+      const container = document.getElementById('firstAidListContainer');
+      container.innerHTML = '';
+
+      const filtered = firstAidGuides.filter(g => 
+        g.title.toLowerCase().includes(filter.toLowerCase()) || 
+        g.steps.some(s => s.toLowerCase().includes(filter.toLowerCase()))
+      );
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 italic py-4 text-center">Nenhuma orientação encontrada para "${filter}".</p>`;
+        return;
+      }
+
+      filtered.forEach((guide, idx) => {
+        const item = document.createElement('div');
+        item.className = 'border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden';
+        item.innerHTML = `
+          <button onclick="toggleAccordion('${guide.id}')" class="w-full p-4 bg-slate-50 dark:bg-slate-700/40 hover:bg-slate-100 dark:hover:bg-slate-700/80 flex items-center justify-between text-left transition">
+            <span class="font-bold text-sm text-slate-800 dark:text-slate-100 flex items-center space-x-2.5">
+              <i class="fa-solid ${guide.icon} text-rose-500 text-lg"></i>
+              <span>${guide.title}</span>
+            </span>
+            <i id="acc-icon-${guide.id}" class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform"></i>
+          </button>
+          <div id="acc-body-${guide.id}" class="hidden p-4 bg-white dark:bg-slate-800 space-y-2 border-t border-slate-100 dark:border-slate-700">
+            <ol class="list-decimal list-inside space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
+              ${guide.steps.map(step => `<li class="leading-relaxed">${step}</li>`).join('')}
+            </ol>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function toggleAccordion(id) {
+      const body = document.getElementById(`acc-body-${id}`);
+      const icon = document.getElementById(`acc-icon-${id}`);
+      if (body.classList.contains('hidden')) {
+        body.classList.remove('hidden');
+        icon.classList.add('rotate-180');
+      } else {
+        body.classList.add('hidden');
+        icon.classList.remove('rotate-180');
+      }
+    }
+
+    function filterFirstAid() {
+      const val = document.getElementById('firstAidSearchInput').value;
+      renderFirstAidList(val);
+    }
+
+    let activeHospitalType = 'all';
+
+    function setHospitalFilter(type) {
+      activeHospitalType = type;
+      document.querySelectorAll('.h-filter-btn').forEach(btn => {
+        btn.classList.remove('bg-brand-600', 'text-white');
+        btn.classList.add('bg-slate-100', 'dark:bg-slate-700', 'text-slate-600', 'dark:text-slate-300');
+      });
+      const activeBtn = document.getElementById(`filter-type-${type}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('bg-slate-100', 'dark:bg-slate-700', 'text-slate-600', 'dark:text-slate-300');
+        activeBtn.classList.add('bg-brand-600', 'text-white');
+      }
+      renderHospitalsGrid();
+    }
+
+    function renderHospitalsGrid() {
+      const container = document.getElementById('hospitalsGridContainer');
+      const search = document.getElementById('hospitalSearchInput').value.toLowerCase();
+      container.innerHTML = '';
+
+      const filtered = healthUnitsData.filter(unit => {
+        const matchesType = activeHospitalType === 'all' || unit.type === activeHospitalType;
+        const matchesSearch = unit.name.toLowerCase().includes(search) || 
+                              unit.address.toLowerCase().includes(search) || 
+                              unit.specialties.some(s => s.toLowerCase().includes(search));
+        return matchesType && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="col-span-2 text-center py-8 text-slate-400 text-xs">Nenhuma unidade de saúde encontrada com os filtros selecionados.</div>`;
+        return;
+      }
+
+      filtered.forEach(unit => {
+        const card = document.createElement('div');
+        card.className = "bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition";
+        card.innerHTML = `
+          <div>
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div>
+                <span class="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400">${unit.type}</span>
+                <h3 class="font-bold text-base text-slate-800 dark:text-slate-100 mt-1">${unit.name}</h3>
+              </div>
+              <span class="text-[11px] font-bold px-2.5 py-1 rounded-full ${unit.badgeColor}">${unit.waitTime}</span>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 flex items-center space-x-1.5"><i class="fa-solid fa-location-dot text-rose-500"></i><span>${unit.address}</span></p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 flex items-center space-x-1.5 mt-1"><i class="fa-solid fa-clock text-brand-500"></i><span>${unit.hours}</span></p>
+            
+            <div class="mt-3 flex flex-wrap gap-1">
+              ${unit.specialties.map(s => `<span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-md">${s}</span>`).join('')}
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+            <a href="tel:${unit.phone.replace(/\D/g, '')}" class="text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-brand-600 transition flex items-center space-x-1">
+              <i class="fa-solid fa-phone text-emerald-500"></i>
+              <span>${unit.phone}</span>
+            </a>
+            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(unit.mapsQuery)}" target="_blank" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition flex items-center space-x-1 shadow-xs">
+              <i class="fa-solid fa-map-location-dot"></i>
+              <span>Como Chegar</span>
+            </a>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function filterHospitals() {
+      renderHospitalsGrid();
+    }
+
+    function initTriageUI() {
+      const list = document.getElementById('symptomsList');
+      list.innerHTML = '';
+      triageSymptoms.forEach((s, i) => {
+        list.innerHTML += `
+          <label class="flex items-center space-x-3 p-3 bg-slate-50 dark:bg-slate-700/40 rounded-xl border border-slate-200 dark:border-slate-600/60 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+            <input type="checkbox" value="${s.id}" data-red="${s.redFlag}" class="triage-check w-4 h-4 text-brand-600 rounded focus:ring-brand-500">
+            <span class="text-xs sm:text-sm text-slate-700 dark:text-slate-200 font-medium">${s.text}</span>
+          </label>
+        `;
+      });
+
+      const redList = document.getElementById('redFlagsList');
+      redList.innerHTML = '';
+      triageRedFlags.forEach((rf, i) => {
+        redList.innerHTML += `
+          <label class="flex items-center space-x-3 p-3 bg-rose-50/50 dark:bg-rose-900/20 rounded-xl border border-rose-200/60 dark:border-rose-800/40 cursor-pointer">
+            <input type="checkbox" class="triage-red-check w-4 h-4 text-rose-600 rounded focus:ring-rose-500">
+            <span class="text-xs sm:text-sm text-slate-700 dark:text-slate-200 font-medium">${rf}</span>
+          </label>
+        `;
+      });
+    }
+
+    function goToTriageStep2() {
+      document.getElementById('triageStep1').classList.add('hidden');
+      document.getElementById('triageStep2').classList.remove('hidden');
+    }
+
+    function backToTriageStep1() {
+      document.getElementById('triageStep2').classList.add('hidden');
+      document.getElementById('triageStep1').classList.remove('hidden');
+    }
+
+    function calculateTriageResult() {
+      let isCriticalRed = false;
+      let hasModerate = false;
+
+      document.querySelectorAll('.triage-check:checked').forEach(c => {
+        if (c.getAttribute('data-red') === 'true') isCriticalRed = true;
+        else hasModerate = true;
+      });
+
+      document.querySelectorAll('.triage-red-check:checked').forEach(() => {
+        isCriticalRed = true;
+      });
+
+      document.getElementById('triageStep2').classList.add('hidden');
+      const step3 = document.getElementById('triageStep3');
+      step3.classList.remove('hidden');
+
+      const resultCard = document.getElementById('triageResultCard');
+
+      if (isCriticalRed) {
+        resultCard.className = "p-6 rounded-2xl bg-rose-600 text-white space-y-3 shadow-lg";
+        resultCard.innerHTML = `
+          <div class="flex items-center space-x-3">
+            <i class="fa-solid fa-triangle-exclamation text-3xl"></i>
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-md">RISCO VERMELHO - EMERGÊNCIA IMEDIATA</span>
+              <h3 class="text-xl font-black mt-1">Procure Atendimento de Urgência Imediato</h3>
+            </div>
+          </div>
+          <p class="text-sm text-rose-100 leading-relaxed">Você relatou sintomas de potencial gravidade. É fortissimamente recomendado ligar para o <strong>SAMU (192)</strong> ou dirigir-se imediatamente ao Pronto-Socorro mais próximo.</p>
+          <div class="pt-2">
+            <a href="tel:192" class="bg-white text-rose-700 hover:bg-rose-50 font-black px-4 py-2 rounded-xl text-xs inline-flex items-center space-x-1.5 shadow-md">
+              <i class="fa-solid fa-phone"></i>
+              <span>LIGAR PARA SAMU (192)</span>
+            </a>
+          </div>
+        `;
+      } else if (hasModerate) {
+        resultCard.className = "p-6 rounded-2xl bg-amber-500 text-white space-y-3 shadow-lg";
+        resultCard.innerHTML = `
+          <div class="flex items-center space-x-3">
+            <i class="fa-solid fa-circle-exclamation text-3xl"></i>
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-md">RISCO AMARELO - PRIORIDADE ALTA</span>
+              <h3 class="text-xl font-black mt-1">Recomendada Consulta em UPA em Poucas Horas</h3>
+            </div>
+          </div>
+          <p class="text-sm text-amber-100 leading-relaxed">Seus sintomas demandam atenção de saúde em curto prazo para evitar complicações. Recomendamos procurar uma Unidade de Pronto Atendimento (UPA 24h).</p>
+        `;
+      } else {
+        resultCard.className = "p-6 rounded-2xl bg-emerald-600 text-white space-y-3 shadow-lg";
+        resultCard.innerHTML = `
+          <div class="flex items-center space-x-3">
+            <i class="fa-solid fa-circle-check text-3xl"></i>
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-md">RISCO VERDE/AZUL - CUIDADOS LEVES</span>
+              <h3 class="text-xl font-black mt-1">Cuidados Caseiros e Observação / UBS</h3>
+            </div>
+          </div>
+          <p class="text-sm text-emerald-100 leading-relaxed">Não foram identificados sinais imediatos de perigo. Mantenha repouso, hidratação adequada e agende uma consulta na Posto de Saúde (UBS) caso os sintomas persistam por mais de 3 dias.</p>
+        `;
+      }
+    }
+
+    function resetTriage() {
+      document.querySelectorAll('.triage-check, .triage-red-check').forEach(c => c.checked = false);
+      document.getElementById('triageStep3').classList.add('hidden');
+      document.getElementById('triageStep1').classList.remove('hidden');
+    }
+
+    function renderMedications() {
+      const container = document.getElementById('medicationsContainer');
+      container.innerHTML = '';
+
+      let pendingCount = 0;
+
+      appState.medications.forEach(med => {
+        if (!med.takenToday) pendingCount++;
+
+        const card = document.createElement('div');
+        card.className = `bg-white dark:bg-slate-800 p-5 rounded-2xl border ${med.takenToday ? 'border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/20' : 'border-slate-200 dark:border-slate-700'} shadow-sm flex flex-col justify-between space-y-4`;
+        card.innerHTML = `
+          <div>
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="font-bold text-base text-slate-800 dark:text-slate-100">${med.name}</h3>
+                <p class="text-xs text-purple-600 dark:text-purple-400 font-semibold">${med.dose} • ${med.schedule}</p>
+              </div>
+              <span class="text-[10px] font-bold px-2 py-1 rounded-full ${med.stock <= 5 ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}">Estoque: ${med.stock} un</span>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+            <button onclick="toggleMedTaken(${med.id})" class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 ${med.takenToday ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-purple-600 text-white hover:bg-purple-700'}">
+              <i class="fa-solid ${med.takenToday ? 'fa-check-double' : 'fa-check'}"></i>
+              <span>${med.takenToday ? 'Tomado Hoje' : 'Marcar como Tomado'}</span>
+            </button>
+            
+            <button onclick="deleteMedication(${med.id})" class="text-xs text-slate-400 hover:text-rose-500 transition">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      document.getElementById('dashMedsText').innerText = `${pendingCount} Pendente(s)`;
+    }
+
+    function toggleMedTaken(id) {
+      const med = appState.medications.find(m => m.id === id);
+      if (med) {
+        med.takenToday = !med.takenToday;
+        if (med.takenToday && med.stock > 0) med.stock--;
+        savePersistedData();
+        renderMedications();
+      }
+    }
+
+    function openAddMedModal() {
+      document.getElementById('addMedModal').classList.remove('hidden');
+    }
+
+    function closeAddMedModal() {
+      document.getElementById('addMedModal').classList.add('hidden');
+    }
+
+    function saveNewMedication() {
+      const name = document.getElementById('newMedName').value;
+      const dose = document.getElementById('newMedDose').value;
+      const schedule = document.getElementById('newMedSchedule').value;
+      const stock = parseInt(document.getElementById('newMedStock').value) || 10;
+
+      if (!name) return alert("Por favor digite o nome do remédio.");
+
+      appState.medications.push({
+        id: Date.now(),
+        name,
+        dose: dose || 'Conforme prescrição',
+        schedule: schedule || 'Horário fixo',
+        stock,
+        takenToday: false
+      });
+
+      savePersistedData();
+      renderMedications();
+      closeAddMedModal();
+    }
+
+    function deleteMedication(id) {
+      appState.medications = appState.medications.filter(m => m.id !== id);
+      savePersistedData();
+      renderMedications();
+    }
+
+    let bpChartInstance = null;
+    let glucoseChartInstance = null;
+
+    function renderCharts() {
+      const labels = appState.vitalsLogs.map(l => l.date);
+      const sysData = appState.vitalsLogs.map(l => l.sys);
+      const diaData = appState.vitalsLogs.map(l => l.dia);
+      const glucoseData = appState.vitalsLogs.map(l => l.glucose);
+      const bpmData = appState.vitalsLogs.map(l => l.bpm);
+
+      // Render Blood Pressure Chart
+      const ctxBP = document.getElementById('bpChart').getContext('2d');
+      if (bpChartInstance) bpChartInstance.destroy();
+
+      bpChartInstance = new Chart(ctxBP, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'Sistólica', data: sysData, borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', fill: true, tension: 0.3 },
+            { label: 'Diastólica', data: diaData, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.3 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } },
+          scales: { y: { min: 50, max: 180 } }
+        }
+      });
+
+      // Render Glucose Chart
+      const ctxG = document.getElementById('glucoseChart').getContext('2d');
+      if (glucoseChartInstance) glucoseChartInstance.destroy();
+
+      glucoseChartInstance = new Chart(ctxG, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'Glicemia (mg/dL)', data: glucoseData, backgroundColor: '#10b981', borderRadius: 8 },
+            { label: 'BPM', data: bpmData, backgroundColor: '#f59e0b', borderRadius: 8 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+
+      renderVitalsTable();
+    }
+
+    function renderVitalsTable() {
+      const tbody = document.getElementById('vitalsTableBody');
+      tbody.innerHTML = '';
+
+      appState.vitalsLogs.slice().reverse().forEach(log => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30">
+            <td class="p-3 font-semibold">${log.date} ${log.time}</td>
+            <td class="p-3 font-bold text-rose-600">${log.sys}/${log.dia}</td>
+            <td class="p-3 font-bold text-emerald-600">${log.glucose}</td>
+            <td class="p-3">${log.bpm}</td>
+            <td class="p-3">${log.weight} kg</td>
+            <td class="p-3">${log.sleep} h</td>
+            <td class="p-3 text-right">
+              <button onclick="deleteVitalLog(${log.id})" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-trash-can"></i></button>
+            </td>
+          </tr>
+        `;
+      });
+
+      if (appState.vitalsLogs.length > 0) {
+        const last = appState.vitalsLogs[appState.vitalsLogs.length - 1];
+        document.getElementById('dashBPText').innerText = `${last.sys}/${last.dia} mmHg`;
+      }
+    }
+
+    function openAddVitalModal() {
+      document.getElementById('addVitalModal').classList.remove('hidden');
+    }
+
+    function closeAddVitalModal() {
+      document.getElementById('addVitalModal').classList.add('hidden');
+    }
+
+    function saveNewVitalLog() {
+      const sys = parseInt(document.getElementById('vitalSys').value) || 120;
+      const dia = parseInt(document.getElementById('vitalDia').value) || 80;
+      const glucose = parseInt(document.getElementById('vitalGlucose').value) || 90;
+      const bpm = parseInt(document.getElementById('vitalBpm').value) || 70;
+      const weight = parseFloat(document.getElementById('vitalWeight').value) || 70;
+      const sleep = parseFloat(document.getElementById('vitalSleep').value) || 8;
+
+      const now = new Date();
+      appState.vitalsLogs.push({
+        id: Date.now(),
+        date: now.toLocaleDateString('pt-BR'),
+        time: now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        sys, dia, glucose, bpm, weight, sleep
+      });
+
+      savePersistedData();
+      renderCharts();
+      closeAddVitalModal();
+    }
+
+    function deleteVitalLog(id) {
+      appState.vitalsLogs = appState.vitalsLogs.filter(l => l.id !== id);
+      savePersistedData();
+      renderCharts();
+    }
+
+    function calculateIMC() {
+      const weight = parseFloat(document.getElementById('imcWeightInput').value) || 0;
+      const heightCm = parseFloat(document.getElementById('imcHeightInput').value) || 0;
+
+      if (!weight || !heightCm) return;
+
+      const heightM = heightCm / 100;
+      const imc = weight / (heightM * heightM);
+      const imcFixed = imc.toFixed(2);
+
+      document.getElementById('imcValText').innerText = imcFixed;
+      document.getElementById('dashIMCText').innerText = imcFixed;
+
+      const badge = document.getElementById('imcStatusBadge');
+      const advice = document.getElementById('imcAdviceText');
+
+      if (imc < 18.5) {
+        badge.innerText = "Abaixo do Peso";
+        badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800";
+        advice.innerText = "Você está abaixo da faixa considerada ideal pela OMS. Consulte um nutricionista para planejamento de aumento de massa magra.";
+      } else if (imc >= 18.5 && imc < 25) {
+        badge.innerText = "Peso Normal / Ideal";
+        badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800";
+        advice.innerText = "Excelente! Seu peso está dentro da faixa saudável da OMS. Mantenha hábitos de alimentação saudável e rotina de exercícios.";
+      } else if (imc >= 25 && imc < 30) {
+        badge.innerText = "Sobrepeso";
+        badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800";
+        advice.innerText = "Atenção leve: Seu índice aponta sobrepeso. Pequenas readequações na dieta e rotinas aeróbicas ajudam no retorno à faixa ideal.";
+      } else {
+        badge.innerText = "Obesidade";
+        badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800";
+        advice.innerText = "Recomendamos agendar uma consulta com médico de família ou endocrinologista para acompanhamento metabólico e preventivo.";
+      }
+    }
+
+    function updateWaterGoalFromInput() {
+      const weight = parseFloat(document.getElementById('waterWeightInput').value) || 70;
+      const activity = document.getElementById('waterActivitySelect').value;
+
+      let bonus = 0;
+      if (activity === 'moderate') bonus = 350;
+      if (activity === 'intense') bonus = 700;
+
+      appState.waterGoal = Math.round((weight * 35) + bonus);
+      savePersistedData();
+      updateWaterUI();
+    }
+
+    function addWater(ml) {
+      appState.waterIntake += ml;
+      savePersistedData();
+      updateWaterUI();
+    }
+
+    function resetWater() {
+      appState.waterIntake = 0;
+      savePersistedData();
+      updateWaterUI();
+    }
+
+    function updateWaterUI() {
+      const pct = Math.min(Math.round((appState.waterIntake / appState.waterGoal) * 100), 100);
+      document.getElementById('waterGoalProgressText').innerText = `${appState.waterIntake} / ${appState.waterGoal} ml (${pct}%)`;
+      document.getElementById('waterProgressBar').style.width = `${pct}%`;
+
+      document.getElementById('dashWaterText').innerText = `${appState.waterIntake} / ${appState.waterGoal} ml`;
+      document.getElementById('dashWaterPercent').innerText = `${pct}%`;
+    }
+
+    let aiChatHistory = [];
+
+    async function sendAIMessage() {
+      const input = document.getElementById('aiChatInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendChatMessage('user', text);
+      input.value = '';
+
+      const typingId = appendTypingIndicator();
+
+      try {
+        const apiKey = ""; // Canvas runtime automatically supplies valid key
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+        aiChatHistory.push({
+          role: 'user',
+          parts: [{ text: text }]
+        });
+
+        const payload = {
+          contents: aiChatHistory,
+          systemInstruction: {
+            parts: [{ text: "Você é o VidaSaúde AI, um assistente especializado em orientação preventiva de saúde e bem-estar em Português do Brasil. Responda de forma clara, empática e formatada com marcadores claros. IMPORTANTE: Sempre inclua ao final uma nota gentil lembrando que suas respostas têm propósito informativo e não substituem uma consulta com um médico ou profissional de saúde humano." }]
+          }
+        };
+
+        const response = await fetchWithRetry(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        removeChatMessage(typingId);
+
+        const result = await response.json();
+        const responseText = result?.candidates?.[0]?.content?.parts?.[0]?.text || "Desculpe, não consegui processar a resposta no momento. Tente novamente.";
+
+        aiChatHistory.push({
+          role: 'model',
+          parts: [{ text: responseText }]
+        });
+
+        appendChatMessage('assistant', responseText);
+
+      } catch (err) {
+        removeChatMessage(typingId);
+        appendChatMessage('assistant', "Ocorreu uma falha ao conectar com o serviço de IA. Por favor verifique sua conexão e tente novamente.");
+      }
+    }
+
+    async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const res = await fetch(url, options);
+          if (res.ok) return res;
+        } catch (e) {
+          if (i === retries - 1) throw e;
+        }
+        await new Promise(r => setTimeout(r, delay * Math.pow(2, i)));
+      }
+    }
+
+    function sendQuickPrompt(promptText) {
+      document.getElementById('aiChatInput').value = promptText;
+      sendAIMessage();
+    }
+
+    function appendChatMessage(sender, text) {
+      const container = document.getElementById('aiChatMessages');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `flex items-start space-x-3 ${sender === 'user' ? 'justify-end' : ''}`;
+
+      if (sender === 'assistant') {
+        msgDiv.innerHTML = `
+          <div class="w-8 h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center text-sm flex-shrink-0">
+            <i class="fa-solid fa-robot"></i>
+          </div>
+          <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 max-w-xl shadow-xs text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-line">
+            ${text}
+          </div>
+        `;
+      } else {
+        msgDiv.innerHTML = `
+          <div class="bg-brand-600 text-white p-4 rounded-2xl max-w-xl shadow-xs text-xs sm:text-sm leading-relaxed">
+            ${text}
+          </div>
+          <div class="w-8 h-8 rounded-xl bg-brand-700 text-white flex items-center justify-center text-sm flex-shrink-0">
+            <i class="fa-solid fa-user"></i>
+          </div>
+        `;
+      }
+
+      container.appendChild(msgDiv);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function appendTypingIndicator() {
+      const container = document.getElementById('aiChatMessages');
+      const id = 'typing_' + Date.now();
+      const msgDiv = document.createElement('div');
+      msgDiv.id = id;
+      msgDiv.className = 'flex items-start space-x-3';
+      msgDiv.innerHTML = `
+        <div class="w-8 h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center text-sm flex-shrink-0">
+          <i class="fa-solid fa-robot animate-spin"></i>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs text-slate-400 italic">
+          VidaSaúde IA está pensando...
+        </div>
+      `;
+      container.appendChild(msgDiv);
+      container.scrollTop = container.scrollHeight;
+      return id;
+    }
+
+    function removeChatMessage(id) {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    }
+
+    function clearAIChat() {
+      aiChatHistory = [];
+      const container = document.getElementById('aiChatMessages');
+      container.innerHTML = `
+        <div class="flex items-start space-x-3">
+          <div class="w-8 h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center text-sm flex-shrink-0">
+            <i class="fa-solid fa-robot"></i>
+          </div>
+          <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 max-w-xl shadow-xs text-xs sm:text-sm text-slate-700 dark:text-slate-200 space-y-2">
+            <p class="font-bold text-teal-600 dark:text-teal-400">Conversa reiniciada.</p>
+            <p>Como posso ajudar você com sua saúde e hábitos hoje?</p>
+          </div>
+        </div>
+      `;
+    }
+
+    window.onload = function() {
+      loadPersistedData();
+      renderFirstAidList();
+      renderHospitalsGrid();
+      initTriageUI();
+      renderMedications();
+      updateWaterGoalFromInput();
+      calculateIMC();
+      
+      // Default to Dashboard tab
+      switchTab('dashboard');
+    };
+  </script>
+</body>
+</html>
